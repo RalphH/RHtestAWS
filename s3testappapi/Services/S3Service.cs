@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.S3.Transfer;
 using Amazon.S3.Util;
 using s3testappapi.Models;
 
@@ -62,6 +64,57 @@ namespace s3testappapi.Services
             }
 
             return res;
+        }
+
+        private const string FilePath = "c:\\temp\\test.jpg";
+        private const string UploadWithKeyName = "UploadWithKeyName";
+        private const string FileStreamUpload = "FileStreamUpload";
+        private const string AdvancedUpload = "AdvancedUpload";
+
+        public async Task UploadFileAsync(string bucketName)
+        {
+            try
+            {
+                var fileTransferUtility = new TransferUtility(_client);
+
+                //option1
+                await fileTransferUtility.UploadAsync(FilePath, bucketName);
+
+                //option2
+                await fileTransferUtility.UploadAsync(FilePath, bucketName, UploadWithKeyName);
+
+                //option3
+                using (var fileToUpload = new FileStream(FilePath, FileMode.Open, FileAccess.Read))
+                {
+                    await fileTransferUtility.UploadAsync(fileToUpload, bucketName, FileStreamUpload);
+                }
+
+                //option4
+                var fileTransferUtilityRequest = new TransferUtilityUploadRequest
+                {
+                    BucketName = bucketName,
+                    FilePath = FilePath,
+                    StorageClass = S3StorageClass.Standard,
+                    PartSize = 6291456, //6mb
+                    Key = AdvancedUpload,
+                    CannedACL = S3CannedACL.NoACL
+                };
+
+                fileTransferUtilityRequest.Metadata.Add("Param1", "Value1");
+                fileTransferUtilityRequest.Metadata.Add("Param2", "Value2");
+
+                await fileTransferUtility.UploadAsync(fileTransferUtilityRequest);
+            }
+            catch (AmazonS3Exception exaws)
+            {
+                Console.WriteLine(exaws.Message);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
         }
     }
 }

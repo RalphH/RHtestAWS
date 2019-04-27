@@ -19,12 +19,24 @@ namespace s3testappapi.Controllers
             _service = service;
         }
 
-        [HttpPost("{bucketName}")]
+        [HttpPost]
+        [Route("CreateBucket/{bucketName}")]
         public async Task<IActionResult> CreateBucket([FromRoute] string bucketName)
         {
+            //postman http://localhost:<port>/api/S3bucket/CreateBucket/rhtestbucket
             var response = await _service.CreateBucketAsync(bucketName);
 
             return Ok(response);
+        }
+
+        [HttpPost]
+        [Route("AddFile/{bucketName}")]
+        public async Task<IActionResult> AddFile([FromRoute] string bucketName)
+        {            
+            //postman http://localhost:<port>/api/S3bucket/AddFile/rhtestbucket
+            await _service.UploadFileAsync(bucketName);
+
+            return Ok();
         }
     }
 }
